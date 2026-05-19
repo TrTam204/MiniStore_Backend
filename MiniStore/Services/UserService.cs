@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
 using MiniStore.Data;
 using MiniStore.DTOs.User;
 using MiniStore.Models;
@@ -15,8 +16,7 @@ namespace MiniStore.Services
         }
         public async Task<UserResponseDto> CreateAsync(UserCreateDto dto)
         {
-            var existingUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower());
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
 
             if (existingUser != null)
             {
@@ -44,7 +44,11 @@ namespace MiniStore.Services
 
             var response = new UserResponseDto
             {
-
+                Id = user.Id,
+                FullName= user.FullName,
+                Email= user.Email,
+                Phone= user.Phone,
+                Address= user.Address,
             };
             return response;
         }
@@ -93,6 +97,21 @@ namespace MiniStore.Services
             };
             return response;
         }
+
+        public async Task<UserResponseDto> GetUserByEmailAsync(string email)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            if (user == null) return null;
+            return new UserResponseDto
+            {
+                Id = user.Id,
+                FullName = user.FullName,
+                Email = user.Email,
+                Phone = user.Phone,
+                Address = user.Address,
+            };
+        }
+
         public async Task<UserResponseDto?> UpdateAsync(int id, UserUpdateDto dto)
         {
             var user = await _context.Users.FindAsync(id);

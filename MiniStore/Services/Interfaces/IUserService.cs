@@ -9,5 +9,6 @@ namespace MiniStore.Services.Interfaces
         Task<UserResponseDto?> GetByIdAsync(int id);
         Task<UserResponseDto?> UpdateAsync(int id, UserUpdateDto dto);
         Task<bool> DeleteAsync(int id);
+        Task<UserResponseDto> GetUserByEmailAsync(string email);
     }
 }

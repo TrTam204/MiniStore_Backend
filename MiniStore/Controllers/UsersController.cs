@@ -15,6 +15,21 @@ namespace MiniStore.Controllers
         {
             _userService = userService;
         }
+        [HttpGet("by-email")]
+        public async Task<IActionResult> GetUserByEmail([FromQuery] string email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                return BadRequest(new { message = "Vui lòng cung cấp email!" });
+            }
+            var user = await _userService.GetUserByEmailAsync(email);
+
+            if (user == null)
+            {
+                return NotFound(new { message = "Email này chưa được đăng ký trong hệ thống!" });
+            }
+            return Ok(user);
+        }
 
         [HttpPost]
         public async Task<IActionResult> Create(UserCreateDto dto)
