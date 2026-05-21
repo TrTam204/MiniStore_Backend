@@ -98,7 +98,7 @@ namespace MiniStore.Services
             return response;
         }
 
-        public async Task<UserResponseDto> GetUserByEmailAsync(string email)
+        public async Task<UserResponseDto?> GetUserByEmailAsync(string email)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
             if (user == null) return null;
