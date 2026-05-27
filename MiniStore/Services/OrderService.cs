@@ -79,7 +79,8 @@ namespace MiniStore.Services
                         ProductId = detail.ProductId,
                         ProductName = detail.Product != null ? detail.Product.Name : "",
                         Quantity = detail.Quantity,
-                        Price = detail.Price
+                        Price = detail.Price,
+                        ImageUrl = detail.Product != null ? detail.Product.ImageUrl : "",
                     }).ToList()
                 }).ToList();
         }
