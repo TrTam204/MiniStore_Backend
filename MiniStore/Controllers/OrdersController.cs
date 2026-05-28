@@ -11,21 +11,27 @@ namespace MiniStore.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _orderService;
-        public OrdersController (IOrderService orderService)
+        public OrdersController(IOrderService orderService)
         {
             _orderService = orderService;
         }
 
+        [Authorize]
         [HttpPost("checkout")]
         public async Task<IActionResult> Checkout([FromBody] CheckoutRequestDto request)
         {
+            var tokenUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (tokenUserId != request.UserId.ToString())
+            {
+                return Forbid();
+            }
             var result = await _orderService.CheckoutAsync(request);
-            if ( result !="Đặt hàng thành công.")
+            if (result != "Đặt hàng thành công.")
             {
                 return BadRequest(result);
             }
             return Ok(result);
-        }
+    }
         [Authorize]
         [HttpGet("history/{userId}")]
         public async Task<IActionResult> GetOrderHistory(int userId)
