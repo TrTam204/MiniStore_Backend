@@ -35,7 +35,7 @@ namespace MiniStore.Services
                 Email = dto.Email,
                 Phone = dto.Phone,
                 Address = dto.Address,
-                Password = dto.Password
+                PasswordHash = dto.Password
             };
 
             _context.Users.Add(user);
