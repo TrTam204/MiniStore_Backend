@@ -2,7 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using MiniStore.DTOs;
 using MiniStore.Services.Interfaces;
-
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 namespace MiniStore.Controllers
 {
     [Route("api/[controller]")]
@@ -25,9 +26,15 @@ namespace MiniStore.Controllers
             }
             return Ok(result);
         }
+        [Authorize]
         [HttpGet("history/{userId}")]
         public async Task<IActionResult> GetOrderHistory(int userId)
         {
+            var tokenUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (tokenUserId != userId.ToString())
+            {
+                return Forbid();
+            }
             var orders = await _orderService.GetOrdersByUserIdAsync(userId);
             return Ok(orders);
         }
