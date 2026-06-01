@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MiniStore.Services.Interfaces;
 using MiniStore.DTOs.Product;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MiniStore.Controllers
 {
@@ -14,7 +15,7 @@ namespace MiniStore.Controllers
         {
             _productService = productService;
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create(ProductCreateDto dto)
         {
@@ -43,7 +44,7 @@ namespace MiniStore.Controllers
 
             return Ok(result);
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, ProductUpdateDto dto)
         {
@@ -56,7 +57,7 @@ namespace MiniStore.Controllers
 
             return Ok(result);
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

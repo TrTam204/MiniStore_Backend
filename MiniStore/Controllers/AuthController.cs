@@ -42,11 +42,13 @@ namespace MiniStore.Controllers
             {
                 return BadRequest("Email hoặc mật khẩu không đúng.");
             }
-            var token = GenerateJwtToken(user.Id, user.Email);
+            var role = string.IsNullOrWhiteSpace(user.Role) ? "User" : user.Role;
+            var token = GenerateJwtToken(user.Id, user.Email, role);
             var response = new LoginResponseDto
             {
                 UserId = user.Id,
                 Email = user.Email,
+                Role = role,
                 Token = token
             };
             return Ok(response);
@@ -57,15 +59,16 @@ namespace MiniStore.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
-
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
             return Ok(new
             {
                 UserId = userId,
                 Email = email,
-                Message = "Token hợp lệ, bạn đã đăng nhập."
+                Message = "Token hợp lệ, bạn đã đăng nhập.",
+                Role = role
             });
         }
-        private string GenerateJwtToken(int userId, string email)
+        private string GenerateJwtToken(int userId, string email, string role)
         {
             var jwtKey = _configuration["Jwt:Key"];
             var jwtIssuer = _configuration["Jwt:Issuer"];
@@ -74,7 +77,8 @@ namespace MiniStore.Controllers
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.Email, email)
+                new Claim(ClaimTypes.Email, email),
+                new Claim(ClaimTypes.Role, role)
             };
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwtKey!)

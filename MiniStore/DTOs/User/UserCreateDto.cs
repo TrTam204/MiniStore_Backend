@@ -23,6 +23,7 @@ namespace MiniStore.DTOs.User
         [Required]
         [MaxLength(150)]
         public string Address { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
     }
 
 }

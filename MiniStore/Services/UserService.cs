@@ -35,7 +35,8 @@ namespace MiniStore.Services
                 Email = dto.Email,
                 Phone = dto.Phone,
                 Address = dto.Address,
-                PasswordHash = dto.Password
+                PasswordHash = dto.Password,
+                Role = string.IsNullOrWhiteSpace(dto.Role) ? "User" : dto.Role
             };
 
             _context.Users.Add(user);
@@ -49,6 +50,7 @@ namespace MiniStore.Services
                 Email= user.Email,
                 Phone= user.Phone,
                 Address= user.Address,
+                Role = user.Role,
             };
             return response;
         }
@@ -77,6 +79,7 @@ namespace MiniStore.Services
                 Email = user.Email,
                 Phone = user.Phone,
                 Address = user.Address,
+                Role = user.Role,
             }).ToList();
             return response;
         }
@@ -94,6 +97,7 @@ namespace MiniStore.Services
                 Email = user.Email,
                 Phone = user.Phone,
                 Address = user.Address,
+                Role = user.Role
             };
             return response;
         }
@@ -109,6 +113,7 @@ namespace MiniStore.Services
                 Email = user.Email,
                 Phone = user.Phone,
                 Address = user.Address,
+                Role = user.Role,
             };
         }
 
@@ -123,6 +128,7 @@ namespace MiniStore.Services
             user.Email = dto.Email;
             user.Phone = dto.Phone;
             user.Address = dto.Address;
+            user.Role = string.IsNullOrWhiteSpace(dto.Role) ? "User" : dto.Role;
 
             await _context.SaveChangesAsync();
             var response = new UserResponseDto
@@ -131,7 +137,8 @@ namespace MiniStore.Services
                 FullName = user.FullName,
                 Email = user.Email,
                 Phone = user.Phone,
-                Address = user.Address
+                Address = user.Address,
+                Role = user.Role
             };
             return response;
         }

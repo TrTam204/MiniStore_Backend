@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MiniStore.DTOs.Category;
 using MiniStore.Services.Interfaces;
-
+using Microsoft.AspNetCore.Authorization;
 namespace MiniStore.Controllers
 {
     [ApiController]
@@ -13,6 +13,7 @@ namespace MiniStore.Controllers
         {
             _categoryService = categoryService;
         }
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create(CategoryCreateDto dto)
         {
@@ -34,6 +35,7 @@ namespace MiniStore.Controllers
             {return NotFound();}
             return Ok(category);
         }
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, CategoryUpdateDto dto)
         {
@@ -42,6 +44,7 @@ namespace MiniStore.Controllers
             {return NotFound();}
             return Ok(category);
         }
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

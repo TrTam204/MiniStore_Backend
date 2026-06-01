@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MiniStore.Services.Interfaces;
 using MiniStore.DTOs.User;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace MiniStore.Controllers
@@ -30,13 +31,14 @@ namespace MiniStore.Controllers
             }
             return Ok(user);
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<IActionResult> Create(UserCreateDto dto)
         {
             var result = await _userService.CreateAsync(dto);
             return Ok(result);
         }
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -44,7 +46,7 @@ namespace MiniStore.Controllers
 
             return Ok(result);
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -57,7 +59,7 @@ namespace MiniStore.Controllers
 
             return Ok(result);
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, UserUpdateDto dto)
         {
@@ -70,7 +72,7 @@ namespace MiniStore.Controllers
 
             return Ok(result);
         }
-
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
