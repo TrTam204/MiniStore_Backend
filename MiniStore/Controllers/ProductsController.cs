@@ -67,7 +67,6 @@ namespace MiniStore.Controllers
             {
                 return NotFound();
             }
-
             return NoContent();
         }
     }

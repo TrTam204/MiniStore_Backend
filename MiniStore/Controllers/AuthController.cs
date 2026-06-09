@@ -2,7 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using MiniStore.Data;
+using MiniStore.DTOs.User;
 using MiniStore.DTOs.Login;
+using MiniStore.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -51,6 +53,67 @@ namespace MiniStore.Controllers
                 Role = role,
                 Token = token
             };
+            return Ok(response);
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(RegisterRequestDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.FullName))
+            {
+                return BadRequest("Vui lòng nhập họ tên.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                return BadRequest("Vui lòng nhập email.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                return BadRequest("Vui lòng nhập mật khẩu.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Phone))
+            {
+                return BadRequest("Vui lòng nhập số điện thoại.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Address))
+            {
+                return BadRequest("Vui lòng nhập địa chỉ.");
+            }
+
+            var existingUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+
+            if (existingUser != null)
+            {
+                return BadRequest("Email đã được sử dụng.");
+            }
+
+            var user = new User
+            {
+                FullName = request.FullName,
+                Email = request.Email,
+                PasswordHash = request.Password,
+                Phone = request.Phone,
+                Address = request.Address,
+                Role = "User"
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            var token = GenerateJwtToken(user.Id, user.Email, user.Role);
+            var response = new LoginResponseDto
+            {
+                UserId = user.Id,
+                Email = user.Email,
+                Role = user.Role,
+                Token = token
+            };
+
             return Ok(response);
         }
         [Authorize]

@@ -60,38 +60,50 @@ namespace MiniStore.Services
         }
         public async Task<List<ProductResponseDto>> GetAllAsync()
         {
-            var products = await _context.Products.ToListAsync();
-            var response = products.Select(product => new ProductResponseDto
-            {
-                Id = product.Id,
-                Name = product.Name,
-                CategoryId = product.CategoryId,
-                SellPrice = product.SellPrice,
-                ImportPrice = product.ImportPrice,
-                Quantity = product.Quantity,
-                ImageUrl = product.ImageUrl,
-                Description = product.Description
-            }).ToList();
-            return response;
+            var response = await _context.Products
+                .Join(
+                    _context.Categories,
+                    product => product.CategoryId,
+                    category => category.Id,
+                    (product, category) => new ProductResponseDto
+                    {
+                        Id = product.Id,
+                        Name = product.Name,
+                        CategoryId = product.CategoryId,
+                        CategoryName = category.Name,
+                        SellPrice = product.SellPrice,
+                        ImportPrice = product.ImportPrice,
+                        Quantity = product.Quantity,
+                        ImageUrl = product.ImageUrl,
+                        Description = product.Description
+                    }
+                )
+                .ToListAsync();
+                  return response;
         }
-        public async Task<ProductResponseDto?> GetByIdAsync(int id)
+         public async Task<ProductResponseDto?> GetByIdAsync(int id)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
-            {
-                return null;
-            }
-            var response = new ProductResponseDto
-            {
-                Id = product.Id,
-                Name = product.Name,
-                CategoryId = product.CategoryId,
-                SellPrice = product.SellPrice,
-                ImportPrice = product.ImportPrice,
-                Quantity = product.Quantity,
-                ImageUrl = product.ImageUrl,
-                Description = product.Description
-            };
+            var response = await _context.Products
+                .Where(product => product.Id == id)
+                .Join(
+                    _context.Categories,
+                    product => product.CategoryId,
+                    category => category.Id,
+                    (product, category) => new ProductResponseDto
+                    {
+                        Id = product.Id,
+                        Name = product.Name,
+                        CategoryId = product.CategoryId,
+                        CategoryName = category.Name,
+                        SellPrice = product.SellPrice,
+                        ImportPrice = product.ImportPrice,
+                        Quantity = product.Quantity,
+                        ImageUrl = product.ImageUrl,
+                        Description = product.Description
+                    }
+                )
+                .FirstOrDefaultAsync();
+
             return response;
         }
         public async Task<ProductResponseDto?> UpdateAsync(int id, ProductUpdateDto dto)
