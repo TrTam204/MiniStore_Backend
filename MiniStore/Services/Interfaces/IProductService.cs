@@ -8,8 +8,8 @@ namespace MiniStore.Services.Interfaces
         Task<ProductResponseDto> CreateAsync(ProductCreateDto dto);
         Task<List<ProductResponseDto>> GetAllAsync();
         Task<ProductResponseDto?> GetByIdAsync(int id);
+        Task<IEnumerable<ProductResponseDto>> GetRelatedProductsAsync(int categoryId, int excludeProductId);
         Task<ProductResponseDto?> UpdateAsync(int id, ProductUpdateDto dto);
         Task<bool> DeleteAsync(int id);
-
     }
 }

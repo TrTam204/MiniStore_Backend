@@ -106,6 +106,32 @@ namespace MiniStore.Services
 
             return response;
         }
+
+        public async Task<IEnumerable<ProductResponseDto>> GetRelatedProductsAsync(int categoryId, int excludeProductId)
+        {
+            return await _context.Products
+                .Where(product => product.CategoryId == categoryId && product.Id != excludeProductId)
+                .Join(
+                    _context.Categories,
+                    product => product.CategoryId,
+                    category => category.Id,
+                    (product, category) => new ProductResponseDto
+                    {
+                        Id = product.Id,
+                        Name = product.Name,
+                        CategoryId = product.CategoryId,
+                        CategoryName = category.Name,
+                        SellPrice = product.SellPrice,
+                        ImportPrice = product.ImportPrice,
+                        Quantity = product.Quantity,
+                        ImageUrl = product.ImageUrl,
+                        Description = product.Description
+                    }
+                )
+                .Take(4)
+                .ToListAsync();
+        }
+
         public async Task<ProductResponseDto?> UpdateAsync(int id, ProductUpdateDto dto)
         {
             var existingProduct = await _context.Products

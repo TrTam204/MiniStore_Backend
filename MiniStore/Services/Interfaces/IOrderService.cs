@@ -5,5 +5,7 @@ namespace MiniStore.Services.Interfaces
     {
         Task<string> CheckoutAsync(CheckoutRequestDto request);
         Task<List<OrderHistoryDto>> GetOrdersByUserIdAsync(int userId);
+        Task<List<OrderHistoryDto>> GetAllOrdersAsync();
+        Task<bool> UpdateOrderStatusAsync(int orderId, string status);
     }
 }

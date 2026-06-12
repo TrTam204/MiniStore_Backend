@@ -120,16 +120,34 @@ namespace MiniStore.Services
         public async Task<UserResponseDto?> UpdateAsync(int id, UserUpdateDto dto)
         {
             var user = await _context.Users.FindAsync(id);
+
             if (user == null)
             {
                 return null;
+            }
+
+            var emailExists = await _context.Users.AnyAsync(x =>
+                x.Email == dto.Email && x.Id != id
+            );
+
+            if (emailExists)
+            {
+                throw new Exception("Email already exists");
+            }
+
+            var phoneExists = await _context.Users.AnyAsync(x =>
+                x.Phone == dto.Phone && x.Id != id
+            );
+
+            if (phoneExists)
+            {
+                throw new Exception("Phone already exists");
             }
             user.FullName = dto.FullName;
             user.Email = dto.Email;
             user.Phone = dto.Phone;
             user.Address = dto.Address;
             user.Role = string.IsNullOrWhiteSpace(dto.Role) ? "User" : dto.Role;
-
             await _context.SaveChangesAsync();
             var response = new UserResponseDto
             {

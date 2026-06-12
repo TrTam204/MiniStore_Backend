@@ -44,6 +44,14 @@ namespace MiniStore.Controllers
 
             return Ok(result);
         }
+
+        [HttpGet("related/{categoryId}/{excludeProductId}")]
+        public async Task<IActionResult> GetRelatedProducts(int categoryId, int excludeProductId)
+        {
+            var result = await _productService.GetRelatedProductsAsync(categoryId, excludeProductId);
+            return Ok(result);
+        }
+
         [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, ProductUpdateDto dto)

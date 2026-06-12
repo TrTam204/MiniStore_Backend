@@ -44,5 +44,25 @@ namespace MiniStore.Controllers
             var orders = await _orderService.GetOrdersByUserIdAsync(userId);
             return Ok(orders);
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet]
+        public async Task<IActionResult> GetAllOrders()
+        {
+            var orders = await _orderService.GetAllOrdersAsync();
+            return Ok(orders);
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut("status/{orderId}")]
+        public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] string status)
+        {
+            var success = await _orderService.UpdateOrderStatusAsync(orderId, status);
+            if (!success)
+            {
+                return NotFound();
+            }
+            return Ok();
+        }
     }
 }

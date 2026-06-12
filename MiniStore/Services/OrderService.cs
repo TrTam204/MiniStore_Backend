@@ -30,6 +30,7 @@ namespace MiniStore.Services
                 OrderDate = DateTime.Now,
                 TotalPrice = 0
             };
+            decimal cartTotal = 0;
             foreach (var item in request.Items)
             {
                 var product = await _context.Products.FindAsync(item.ProductId);
@@ -53,9 +54,11 @@ namespace MiniStore.Services
                     Quantity = item.Quantity,
                     Price = product.SellPrice
                 };
-                order.TotalPrice += product.SellPrice * item.Quantity;
+                cartTotal += product.SellPrice * item.Quantity;
                 order.OrderDetails.Add(orderDetail);
             }
+            var shippingFee = cartTotal < 500000 ? 30000 : 0;
+            order.TotalPrice = cartTotal + shippingFee;
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
             return "Đặt hàng thành công.";
@@ -74,6 +77,7 @@ namespace MiniStore.Services
                     OrderId = o.Id,
                     OrderDate = o.OrderDate,
                     TotalPrice = o.TotalPrice,
+                    Status = o.Status,
                     Items = o.OrderDetails.Select(detail => new OrderHistoryItemDto
                     {
                         ProductId = detail.ProductId,
@@ -83,6 +87,42 @@ namespace MiniStore.Services
                         ImageUrl = detail.Product != null ? detail.Product.ImageUrl : "",
                     }).ToList()
                 }).ToList();
+        }
+
+        public async Task<List<OrderHistoryDto>> GetAllOrdersAsync()
+        {
+            var orders = await _context.Orders
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+            return orders.Select(o => new OrderHistoryDto
+                {
+                    OrderId = o.Id,
+                    OrderDate = o.OrderDate,
+                    TotalPrice = o.TotalPrice,
+                    Status = o.Status,
+                    Items = o.OrderDetails.Select(detail => new OrderHistoryItemDto
+                    {
+                        ProductId = detail.ProductId,
+                        ProductName = detail.Product != null ? detail.Product.Name : "",
+                        Quantity = detail.Quantity,
+                        Price = detail.Price,
+                        ImageUrl = detail.Product != null ? detail.Product.ImageUrl : "",
+                    }).ToList()
+                }).ToList();
+        }
+
+        public async Task<bool> UpdateOrderStatusAsync(int orderId, string status)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null)
+            {
+                return false;
+            }
+            order.Status = status;
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }
