@@ -14,7 +14,7 @@ namespace MiniStore.DTOs.Product
         [Range(0, double.MaxValue)]
         public decimal ImportPrice { get; set; }
 
-        [Range(0, int.MaxValue)]
+        [Range(0, int.MaxValue, ErrorMessage = "Quantity must be non-negative.")]
         public int Quantity { get; set; }
 
         [Required]
@@ -26,5 +26,6 @@ namespace MiniStore.DTOs.Product
 
         [Range(1, int.MaxValue)]
         public int CategoryId { get; set; }
+        public int? BrandId { get; set; }
     }
 }

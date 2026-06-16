@@ -92,6 +92,7 @@ namespace MiniStore.Services
         public async Task<List<OrderHistoryDto>> GetAllOrdersAsync()
         {
             var orders = await _context.Orders
+                .Include(o => o.User)
                 .Include(o => o.OrderDetails)
                 .ThenInclude(od => od.Product)
                 .OrderByDescending(o => o.OrderDate)
@@ -102,6 +103,7 @@ namespace MiniStore.Services
                     OrderDate = o.OrderDate,
                     TotalPrice = o.TotalPrice,
                     Status = o.Status,
+                    BuyerName = o.User != null ? o.User.FullName : string.Empty,
                     Items = o.OrderDetails.Select(detail => new OrderHistoryItemDto
                     {
                         ProductId = detail.ProductId,
@@ -115,12 +117,34 @@ namespace MiniStore.Services
 
         public async Task<bool> UpdateOrderStatusAsync(int orderId, string status)
         {
-            var order = await _context.Orders.FindAsync(orderId);
+            var order = await _context.Orders
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
             if (order == null)
             {
                 return false;
             }
+
+            var finalStates = new[] { "Đã nhận", "Đã hủy" };
+            if (finalStates.Contains(order.Status))
+            {
+                return false;
+            }
+
+            var previousStatus = order.Status;
             order.Status = status;
+            if (status == "Đã hủy" && previousStatus != "Đã hủy")
+            {
+                foreach (var detail in order.OrderDetails)
+                {
+                    var product = detail.Product ?? await _context.Products.FindAsync(detail.ProductId);
+                    if (product != null)
+                    {
+                        product.Quantity += detail.Quantity;
+                    }
+                }
+            }
             await _context.SaveChangesAsync();
             return true;
         }

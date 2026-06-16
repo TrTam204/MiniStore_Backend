@@ -3,6 +3,8 @@ using MiniStore.Data;
 using MiniStore.DTOs.Product;
 using MiniStore.Models;
 using MiniStore.Services.Interfaces;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace MiniStore.Services
 {
@@ -13,6 +15,37 @@ namespace MiniStore.Services
         {
             _context = context;
         }
+
+        private string ProcessImageUrl(string imageUrl)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                return imageUrl;
+
+            var match = Regex.Match(imageUrl, @"^data:image\/[a-zA-Z]+;base64,(.+)$");
+            if (!match.Success)
+                return imageUrl;
+
+            try
+            {
+                var base64Data = match.Groups[1].Value;
+                var imageBytes = Convert.FromBase64String(base64Data);
+                var imagesFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                if (!Directory.Exists(imagesFolder))
+                {
+                    Directory.CreateDirectory(imagesFolder);
+                }
+
+                var fileName = $"{Guid.NewGuid():N}.jpg";
+                var imagePath = Path.Combine(imagesFolder, fileName);
+                File.WriteAllBytes(imagePath, imageBytes);
+                return $"/images/{fileName}";
+            }
+            catch
+            {
+                return imageUrl;
+            }
+        }
+
         public async Task<ProductResponseDto> CreateAsync(ProductCreateDto dto)
         {
             var existingProduct = await _context.Products
@@ -37,10 +70,11 @@ namespace MiniStore.Services
             {
                 Name = dto.Name,
                 CategoryId = dto.CategoryId,
+                BrandId = dto.BrandId,
                 SellPrice = dto.SellPrice,
                 ImportPrice = dto.ImportPrice,
                 Quantity = dto.Quantity,
-                ImageUrl = dto.ImageUrl,
+                ImageUrl = ProcessImageUrl(dto.ImageUrl),
                 Description = dto.Description
             };
             _context.Products.Add(product);
@@ -50,6 +84,7 @@ namespace MiniStore.Services
                 Id = product.Id,
                 Name = product.Name,
                 CategoryId = product.CategoryId,
+                BrandId = product.BrandId,
                 SellPrice = product.SellPrice,
                 ImportPrice = product.ImportPrice,
                 Quantity = product.Quantity,
@@ -61,23 +96,22 @@ namespace MiniStore.Services
         public async Task<List<ProductResponseDto>> GetAllAsync()
         {
             var response = await _context.Products
-                .Join(
-                    _context.Categories,
-                    product => product.CategoryId,
-                    category => category.Id,
-                    (product, category) => new ProductResponseDto
-                    {
-                        Id = product.Id,
-                        Name = product.Name,
-                        CategoryId = product.CategoryId,
-                        CategoryName = category.Name,
-                        SellPrice = product.SellPrice,
-                        ImportPrice = product.ImportPrice,
-                        Quantity = product.Quantity,
-                        ImageUrl = product.ImageUrl,
-                        Description = product.Description
-                    }
-                )
+                .Include(product => product.Category)
+                .Include(product => product.Brand)
+                .Select(product => new ProductResponseDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    CategoryId = product.CategoryId,
+                    CategoryName = product.Category != null ? product.Category.Name : string.Empty,
+                    BrandId = product.BrandId,
+                    BrandName = product.Brand != null ? product.Brand.Name : string.Empty,
+                    SellPrice = product.SellPrice,
+                    ImportPrice = product.ImportPrice,
+                    Quantity = product.Quantity,
+                    ImageUrl = product.ImageUrl,
+                    Description = product.Description
+                })
                 .ToListAsync();
                   return response;
         }
@@ -85,23 +119,22 @@ namespace MiniStore.Services
         {
             var response = await _context.Products
                 .Where(product => product.Id == id)
-                .Join(
-                    _context.Categories,
-                    product => product.CategoryId,
-                    category => category.Id,
-                    (product, category) => new ProductResponseDto
-                    {
-                        Id = product.Id,
-                        Name = product.Name,
-                        CategoryId = product.CategoryId,
-                        CategoryName = category.Name,
-                        SellPrice = product.SellPrice,
-                        ImportPrice = product.ImportPrice,
-                        Quantity = product.Quantity,
-                        ImageUrl = product.ImageUrl,
-                        Description = product.Description
-                    }
-                )
+                .Include(product => product.Category)
+                .Include(product => product.Brand)
+                .Select(product => new ProductResponseDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    CategoryId = product.CategoryId,
+                    CategoryName = product.Category != null ? product.Category.Name : string.Empty,
+                    BrandId = product.BrandId,
+                    BrandName = product.Brand != null ? product.Brand.Name : string.Empty,
+                    SellPrice = product.SellPrice,
+                    ImportPrice = product.ImportPrice,
+                    Quantity = product.Quantity,
+                    ImageUrl = product.ImageUrl,
+                    Description = product.Description
+                })
                 .FirstOrDefaultAsync();
 
             return response;
@@ -111,23 +144,22 @@ namespace MiniStore.Services
         {
             return await _context.Products
                 .Where(product => product.CategoryId == categoryId && product.Id != excludeProductId)
-                .Join(
-                    _context.Categories,
-                    product => product.CategoryId,
-                    category => category.Id,
-                    (product, category) => new ProductResponseDto
-                    {
-                        Id = product.Id,
-                        Name = product.Name,
-                        CategoryId = product.CategoryId,
-                        CategoryName = category.Name,
-                        SellPrice = product.SellPrice,
-                        ImportPrice = product.ImportPrice,
-                        Quantity = product.Quantity,
-                        ImageUrl = product.ImageUrl,
-                        Description = product.Description
-                    }
-                )
+                .Include(product => product.Category)
+                .Include(product => product.Brand)
+                .Select(product => new ProductResponseDto
+                {
+                    Id = product.Id,
+                    Name = product.Name,
+                    CategoryId = product.CategoryId,
+                    CategoryName = product.Category != null ? product.Category.Name : string.Empty,
+                    BrandId = product.BrandId,
+                    BrandName = product.Brand != null ? product.Brand.Name : string.Empty,
+                    SellPrice = product.SellPrice,
+                    ImportPrice = product.ImportPrice,
+                    Quantity = product.Quantity,
+                    ImageUrl = product.ImageUrl,
+                    Description = product.Description
+                })
                 .Take(4)
                 .ToListAsync();
         }
@@ -164,7 +196,8 @@ namespace MiniStore.Services
             product.SellPrice = dto.SellPrice;
             product.ImportPrice = dto.ImportPrice;
             product.Quantity = dto.Quantity;
-            product.ImageUrl = dto.ImageUrl;
+            product.BrandId = dto.BrandId;
+            product.ImageUrl = ProcessImageUrl(dto.ImageUrl);
             product.Description = dto.Description;
             await _context.SaveChangesAsync();
             var response = new ProductResponseDto

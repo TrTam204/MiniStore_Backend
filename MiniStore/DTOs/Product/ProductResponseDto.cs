@@ -11,5 +11,8 @@
         public string Description { get; set; } = string.Empty;
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
+        public int? BrandId { get; set; }
+        public string BrandName { get; set; } = string.Empty;
+        public bool IsInStock => Quantity > 0;
     }
 }

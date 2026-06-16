@@ -6,6 +6,7 @@
         public DateTime OrderDate { get; set; }
         public decimal TotalPrice { get; set; }
         public string Status { get; set; } = string.Empty;
+        public string BuyerName { get; set; } = string.Empty;
         public List<OrderHistoryItemDto> Items { get; set; } = new();
     }
 
