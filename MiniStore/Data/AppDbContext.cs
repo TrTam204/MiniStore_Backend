@@ -16,6 +16,7 @@ namespace MiniStore.Data
         public DbSet<CartDetail> CartsDetails { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<OrderDetail> OrderDetails { get; set; }
+        public DbSet<Voucher> Vouchers { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,6 +30,16 @@ namespace MiniStore.Data
                 .HasOne(p => p.Brand)
                 .WithMany(b => b.Products)
                 .HasForeignKey(p => p.BrandId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Voucher>()
+                .HasIndex(v => v.Code)
+                .IsUnique();
+
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Voucher)
+                .WithMany()
+                .HasForeignKey(o => o.VoucherId)
                 .OnDelete(DeleteBehavior.SetNull);
         }
     }

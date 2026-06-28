@@ -16,36 +16,83 @@ namespace MiniStore.Services
 
         public async Task<SalesReportSummaryDto> GetSalesReportAsync()
         {
-            var items = await (
-                from orderDetail in _context.OrderDetails
-                join order in _context.Orders on orderDetail.OrderId equals order.Id
-                join user in _context.Users on order.UserId equals user.Id
-                join product in _context.Products on orderDetail.ProductId equals product.Id
-                join category in _context.Categories on product.CategoryId equals category.Id into categoryJoin
-                from category in categoryJoin.DefaultIfEmpty()
-                orderby order.OrderDate descending, order.Id descending
-                select new SalesReportDto
+            var orders = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Product)
+                        .ThenInclude(p => p.Category)
+                .OrderByDescending(o => o.OrderDate)
+                .ToListAsync();
+
+            var items = orders.Select(order =>
+            {
+                var subtotal = order.OrderDetails.Sum(detail => detail.Price * detail.Quantity);
+                var shippingFee = Math.Max(order.TotalPrice - subtotal, 0);
+                var totalAmount = order.FinalAmount > 0
+                    ? order.FinalAmount
+                    : subtotal + shippingFee - order.DiscountAmount;
+
+                var productNames = string.Join(", ", order.OrderDetails
+                    .Select(detail => detail.Product?.Name ?? string.Empty)
+                    .Where(name => !string.IsNullOrWhiteSpace(name)));
+
+                var categoryName = string.Join(", ", order.OrderDetails
+                    .Select(detail => detail.Product?.Category?.Name ?? string.Empty)
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+                    .Distinct());
+
+                return new SalesReportDto
                 {
                     OrderId = order.Id,
                     OrderDate = order.OrderDate,
-                    UserId = user.Id,
-                    FullName = user.FullName,
-                    Email = user.Email,
-                    ProductId = product.Id,
-                    ProductName = product.Name,
-                    CategoryName = category != null ? category.Name : string.Empty,
-                    Quantity = orderDetail.Quantity,
-                    Price = orderDetail.Price,
-                    TotalAmount = orderDetail.Price * orderDetail.Quantity
-                }
-            ).ToListAsync();
+                    UserId = order.User?.Id ?? 0,
+                    FullName = order.User?.FullName ?? string.Empty,
+                    Email = order.User?.Email ?? string.Empty,
+                    ProductNames = string.IsNullOrWhiteSpace(productNames) ? "" : productNames,
+                    CategoryName = string.IsNullOrWhiteSpace(categoryName) ? "" : categoryName,
+                    TotalQuantity = order.OrderDetails.Sum(detail => detail.Quantity),
+                    TotalAmount = totalAmount,
+                    Status = order.Status
+                };
+            }).ToList();
+
+            var categoryBreakdown = orders
+                .SelectMany(order =>
+                {
+                    var orderSubtotal = order.OrderDetails.Sum(detail => detail.Price * detail.Quantity);
+                    var subtotal = orderSubtotal;
+                    var shippingFee = Math.Max(order.TotalPrice - subtotal, 0);
+                    var orderTotal = order.FinalAmount > 0
+                        ? order.FinalAmount
+                        : subtotal + shippingFee - order.DiscountAmount;
+
+                    return order.OrderDetails.Select(detail => new
+                    {
+                        Category = detail.Product?.Category?.Name ?? "Khác",
+                        LineAmount = detail.Price * detail.Quantity,
+                        Quantity = detail.Quantity,
+                        OrderSubtotal = orderSubtotal,
+                        OrderTotal = orderTotal
+                    });
+                })
+                .GroupBy(x => x.Category)
+                .Select(group => new CategoryReportDto
+                {
+                    CategoryName = group.Key,
+                    TotalQuantity = group.Sum(x => x.Quantity),
+                    TotalAmount = group.Sum(x => x.OrderSubtotal > 0
+                        ? Math.Round(x.OrderTotal * (x.LineAmount / x.OrderSubtotal), 2)
+                        : 0)
+                })
+                .ToList();
 
             return new SalesReportSummaryDto
             {
-                TotalOrders = items.Select(item => item.OrderId).Distinct().Count(),
-                TotalProductsSold = items.Sum(item => item.Quantity),
+                TotalOrders = items.Count,
+                TotalProductsSold = orders.Sum(order => order.OrderDetails.Sum(detail => detail.Quantity)),
                 TotalRevenue = items.Sum(item => item.TotalAmount),
-                Items = items
+                Items = items,
+                CategoryBreakdown = categoryBreakdown
             };
         }
     }

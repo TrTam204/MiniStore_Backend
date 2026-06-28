@@ -7,11 +7,10 @@ namespace MiniStore.DTOs.Report
         public int UserId { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public int ProductId { get; set; }
-        public string ProductName { get; set; } = string.Empty;
+        public string ProductNames { get; set; } = string.Empty;
         public string CategoryName { get; set; } = string.Empty;
-        public int Quantity { get; set; }
-        public decimal Price { get; set; }
+        public int TotalQuantity { get; set; }
         public decimal TotalAmount { get; set; }
+        public string Status { get; set; } = string.Empty;
     }
 }

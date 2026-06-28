@@ -14,6 +14,8 @@
 
         public string Address { get; set; } = string.Empty;
         public string Role { get; set; } = "User";
+        public string? ResetPasswordOtp { get; set; }
+        public DateTime? ResetPasswordOtpExpiry { get; set; }
 
     }
 

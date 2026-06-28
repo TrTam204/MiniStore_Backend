@@ -11,9 +11,11 @@ namespace MiniStore.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _orderService;
-        public OrdersController(IOrderService orderService)
+        private readonly MiniStore.Services.Interfaces.IInvoiceService _invoiceService;
+        public OrdersController(IOrderService orderService, MiniStore.Services.Interfaces.IInvoiceService invoiceService)
         {
             _orderService = orderService;
+            _invoiceService = invoiceService;
         }
 
         [Authorize]
@@ -63,6 +65,26 @@ namespace MiniStore.Controllers
                 return NotFound();
             }
             return Ok();
+        }
+
+        [Authorize]
+        [HttpGet("{orderId}/invoice")]
+        public async Task<IActionResult> GetInvoice(int orderId)
+        {
+            // user must be owner or admin
+            var tokenUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var isAdmin = User.IsInRole("Admin");
+            if (!isAdmin)
+            {
+                // check ownership
+                if (tokenUserId == null) return Forbid();
+                var orders = await _orderService.GetOrdersByUserIdAsync(int.Parse(tokenUserId));
+                if (!orders.Any(o => o.OrderId == orderId)) return Forbid();
+            }
+            if (_invoiceService == null) return NotFound("Invoice service not available.");
+            var bytes = await _invoiceService.GenerateInvoicePdfAsync(orderId);
+            if (bytes == null || bytes.Length == 0) return NotFound();
+            return File(bytes, "application/pdf", $"invoice_{orderId}.pdf");
         }
     }
 }

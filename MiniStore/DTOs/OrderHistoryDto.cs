@@ -5,8 +5,15 @@
         public int OrderId { get; set; }
         public DateTime OrderDate { get; set; }
         public decimal TotalPrice { get; set; }
+        public decimal DiscountAmount { get; set; }
+        public decimal FinalAmount { get; set; }
+        public string? VoucherCode { get; set; }
+        public decimal ShippingFee { get; set; }
         public string Status { get; set; } = string.Empty;
         public string BuyerName { get; set; } = string.Empty;
+        public string? ShippingName { get; set; }
+        public string? ShippingPhone { get; set; }
+        public string? ShippingAddress { get; set; }
         public List<OrderHistoryItemDto> Items { get; set; } = new();
     }
 

@@ -4,11 +4,14 @@ using Microsoft.IdentityModel.Tokens;
 using MiniStore.Data;
 using MiniStore.DTOs.User;
 using MiniStore.DTOs.Login;
+using MiniStore.DTOs.Auth;
 using MiniStore.Models;
+using MiniStore.Services.Interfaces;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
+
 namespace MiniStore.Controllers
 {
     [Route("api/[controller]")]
@@ -17,12 +20,15 @@ namespace MiniStore.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _configuration;
+        private readonly IAuthService _authService;
 
-        public AuthController(AppDbContext context, IConfiguration configuration)
+        public AuthController(AppDbContext context, IConfiguration configuration, IAuthService authService)
         {
             _context = context;
             _configuration = configuration;
+            _authService = authService;
         }
+
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto request)
         {
@@ -116,6 +122,7 @@ namespace MiniStore.Controllers
 
             return Ok(response);
         }
+
         [Authorize]
         [HttpGet("profile")]
         public IActionResult Profile()
@@ -131,6 +138,43 @@ namespace MiniStore.Controllers
                 Role = role
             });
         }
+
+        [HttpPost("forgot")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequestDto dto)
+        {
+            try
+            {
+                await _authService.ForgotPasswordAsync(dto);
+                return Ok(new { message = "Đã gửi mã OTP vào email, vui lòng kiểm tra hộp thư." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOtp(VerifyOtpRequestDto dto)
+        {
+            var ok = await _authService.VerifyOtpAsync(dto);
+            if (ok) return Ok(new { message = "OTP hợp lệ." });
+            return BadRequest(new { message = "OTP không hợp lệ hoặc đã hết hạn." });
+        }
+
+        [HttpPost("reset")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequestDto dto)
+        {
+            try
+            {
+                await _authService.ResetPasswordAsync(dto);
+                return Ok(new { message = "Đổi mật khẩu thành công." });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         private string GenerateJwtToken(int userId, string email, string role)
         {
             var jwtKey = _configuration["Jwt:Key"];
@@ -143,13 +187,8 @@ namespace MiniStore.Controllers
                 new Claim(ClaimTypes.Email, email),
                 new Claim(ClaimTypes.Role, role)
             };
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey!)
-            );
-            var credentials = new SigningCredentials(
-                key,
-                SecurityAlgorithms.HmacSha256
-            );
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey!));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken(
                 issuer: jwtIssuer,
                 audience: jwtAudience,

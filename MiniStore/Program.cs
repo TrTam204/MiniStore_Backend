@@ -4,9 +4,15 @@ using MiniStore.Services.Interfaces;
 using MiniStore.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using QuestPDF;
+using QuestPDF.Infrastructure;
 using System.Text;
 using System;
 using Microsoft.OpenApi.Models;
+using MiniStore.Helpers;
+using MiniStore.Services;
+using MiniStore.Services.Interfaces;
+using Microsoft.Extensions.Configuration;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -47,6 +53,15 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IBrandService, BrandService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<MiniStore.Services.Interfaces.IVoucherService, MiniStore.Services.VoucherService>();
+builder.Services.AddScoped<MiniStore.Services.Interfaces.IInvoiceService, MiniStore.Services.InvoiceService>();
+// Email settings
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+var emailSettingsSection = builder.Configuration.GetSection("EmailSettings");
+Console.WriteLine($"EmailSettings Host='{emailSettingsSection["Host"]}' SmtpServer='{emailSettingsSection["SmtpServer"]}' Username='{emailSettingsSection["Username"]}'");
+
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
 var jwtIssuer = builder.Configuration["Jwt:Issuer"];
@@ -74,7 +89,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 builder.Services.AddDbContext<AppDbContext>(options =>
-options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -90,6 +105,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// QuestPDF requires a license setting even for the community edition.
+QuestPDF.Settings.License = LicenseType.Community;
 
 app.UseStaticFiles();
 app.UseCors("AllowAll");
